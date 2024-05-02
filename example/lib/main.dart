@@ -3,16 +3,11 @@ import 'package:map_camera_flutter/map_camera_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final cameras = await availableCameras();
-  final firstCamera = cameras.first;
-  runApp(MyApp(
-    camera: firstCamera,
-  ));
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final CameraDescription camera;
-  const MyApp({super.key, required this.camera});
+  const MyApp({super.key});
 
   // This widget is the root of your application.
   @override
@@ -23,17 +18,15 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: MyHomePage(
+      home: const MyHomePage(
         title: 'Camera With Map Location',
-        camera: camera,
       ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title, required this.camera});
-  final CameraDescription camera;
+  const MyHomePage({super.key, required this.title});
 
   final String title;
 
@@ -56,13 +49,12 @@ class _MyHomePageState extends State<MyHomePage> {
           title: Text(widget.title),
         ),
         body: MapCameraLocation(
-          camera: widget.camera,
           onImageCaptured: (ImageAndLocationData data) {
-            print('Captured image path: ${data.imagePath}');
+            print('Captured image path: ${data.image?.length}');
             print('Latitude: ${data.latitude}');
             print('Longitude: ${data.longitude}');
-            print('Location name: ${data.locationName}');
-            print('Sublocation: ${data.subLocation}');
+            //print('Location name: ${data.locationName}');
+            //print('Sublocation: ${data.subLocation}');
           },
         ));
   }
