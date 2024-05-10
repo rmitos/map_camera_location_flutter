@@ -18,7 +18,7 @@ class MapCameraController extends GetxController with StateMixin {
 
   Completer<GoogleMapController> _mapController = Completer<GoogleMapController>();
   final _markerId = const MarkerId("map_marker");
-  var markers = RxSet<Marker>().obs;
+  var markers = <Marker>{};
   var showProgress = false.obs;
   var latLong = const LatLng(0.0, 0.0).obs;
 
@@ -58,7 +58,7 @@ class MapCameraController extends GetxController with StateMixin {
     change(null, status: RxStatus.success());
   }
 
-  void onMapCreated(GoogleMapController controller) async {
+  void onMapCreated(GoogleMapController controller) {
     if (!_mapController.isCompleted) {
       _mapController.complete(controller);
       _getLocation();
@@ -103,13 +103,14 @@ class MapCameraController extends GetxController with StateMixin {
     StreamSubscription<Position> positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position? position) async {
       if (position != null) {
         errorMessage.value = "";
-        final latLng = LatLng(position.latitude, position.longitude);
+        latLong.value = LatLng(position.latitude, position.longitude);
 
-        markers.value.clear();
-        markers.value.add(Marker(markerId: _markerId, position: latLng));
+        markers.clear();
+        markers.add(Marker(markerId: _markerId, position: latLong.value));
 
+        final camPos = CameraPosition(target: latLong.value, zoom: 17);
         final GoogleMapController controller = await _mapController.future;
-        controller.moveCamera(CameraUpdate.newLatLng(latLng));
+        await controller.animateCamera(CameraUpdate.newCameraPosition(camPos));
 
         await _updatePosition(position);
       }

@@ -53,7 +53,7 @@ class MapCameraLocation extends StatelessWidget {
                                           padding: const EdgeInsets.all(0),
                                           child: Obx(
                                             () => GoogleMap(
-                                              mapType: MapType.satellite,
+                                              mapType: MapType.normal,
                                               compassEnabled: false,
                                               mapToolbarEnabled: false,
                                               liteModeEnabled: false,
@@ -62,8 +62,8 @@ class MapCameraLocation extends StatelessWidget {
                                               scrollGesturesEnabled: false,
                                               zoomControlsEnabled: false,
                                               zoomGesturesEnabled: false,
-                                              markers: controller.markers.value,
-                                              initialCameraPosition: const CameraPosition(target: LatLng(0.0, 0.0), zoom: 15),
+                                              markers: controller.markers,
+                                              initialCameraPosition: CameraPosition(target: controller.latLong.value, zoom: 17),
                                               onMapCreated: controller.onMapCreated,
                                             ),
                                           )),
