@@ -16,8 +16,6 @@ class CameraMapPage extends StatelessWidget {
             print('Captured image path: ${data.image?.length}');
             print('Latitude: ${data.latitude}');
             print('Longitude: ${data.longitude}');
-            //print('Location name: ${data.locationName}');
-            //print('Sublocation: ${data.subLocation}');
           },
         ));
   }
