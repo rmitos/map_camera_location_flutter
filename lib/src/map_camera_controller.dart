@@ -97,7 +97,7 @@ class MapCameraController extends GetxController with StateMixin {
 
     const LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.best,
-      distanceFilter: 5, //move the device 5 meters to update location
+      distanceFilter: 0, //notify all movements, otherwise, location won't pickup on second call.
     );
 
     StreamSubscription<Position> positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position? position) async {

@@ -1,3 +1,4 @@
+import 'package:example/camera_map.dart';
 import 'package:flutter/material.dart';
 import 'package:map_camera_flutter/map_camera_flutter.dart';
 
@@ -44,18 +45,22 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          title: Text(widget.title),
-        ),
-        body: MapCameraLocation(
-          onImageCaptured: (ImageAndLocationData data) {
-            print('Captured image path: ${data.image?.length}');
-            print('Latitude: ${data.latitude}');
-            print('Longitude: ${data.longitude}');
-            //print('Location name: ${data.locationName}');
-            //print('Sublocation: ${data.subLocation}');
-          },
-        ));
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: Text(widget.title),
+      ),
+      body: ListView(
+        children: [
+          Center(
+            child: OutlinedButton(
+              child: Text('Image with Map'),
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CameraMapPage()));
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
