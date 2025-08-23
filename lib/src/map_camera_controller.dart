@@ -12,11 +12,16 @@ import 'package:ntp/ntp.dart';
 
 import '../map_camera_flutter.dart';
 
-class MapCameraController extends GetxController with StateMixin {
+class MapCameraController extends GetxController with StateMixin, WidgetsBindingObserver {
+  var isControllerActive = true;
   late CameraController cameraController;
   var flashMode = FlashMode.off.obs;
 
-  Completer<GoogleMapController> _mapController = Completer<GoogleMapController>();
+  late List<CameraDescription> cameras;
+  var selectedCameraIndex = 0.obs;
+
+  GoogleMapController? googleMapController;
+  StreamSubscription<Position>? positionStream;
   final _markerId = const MarkerId("map_marker");
   var markers = <Marker>{};
   var showProgress = false.obs;
@@ -34,33 +39,76 @@ class MapCameraController extends GetxController with StateMixin {
 
   @override
   Future onInit() async {
-    await _setCamera();
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
+    await _setCamera();
   }
 
   @override
   void onClose() {
-    cameraController.dispose();
-    _mapController = Completer();
+    isControllerActive = false;
+    WidgetsBinding.instance.removeObserver(this);
+    positionStream?.cancel();
+    if (cameraController.value.isInitialized) {
+      cameraController.dispose();
+    }
+    googleMapController?.dispose();
+
     super.onClose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (!isControllerActive) {
+      return;
+    }
+
+    // It's possible this method is called before the camera is fully initialized.
+    // So, we first check if the camera controller's value indicates it's ready.
+    // This safely avoids a LateInitializationError.
+    if (!cameraController.value.isInitialized) {
+      return;
+    }
+
+    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+      // Release the camera when the app is in the background or paused.
+      cameraController.dispose();
+    } else if (state == AppLifecycleState.resumed) {
+      // When the app is resumed, re-initialize the camera.
+      _setCamera();
+    }
+  }
+
   Future _setCamera() async {
-    final cameras = await availableCameras();
+    cameras = await availableCameras();
+    if (cameras.isEmpty) {
+      change(null, status: RxStatus.error("No cameras found."));
+      return;
+    }
     // Initialize the camera controller
     cameraController = CameraController(
-      cameras.first,
+      cameras[selectedCameraIndex.value],
       ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.jpeg,
     );
-    await cameraController.initialize();
-    change(null, status: RxStatus.success());
+    try {
+      await cameraController.initialize();
+      if(isControllerActive) {
+        change(null, status: RxStatus.success());
+      }
+    } catch (e) {
+      if(isControllerActive) {
+        change(null, status: RxStatus.error("Failed to initialize camera: $e"));
+      }
+    }
   }
 
   void onMapCreated(GoogleMapController controller) {
-    if (!_mapController.isCompleted) {
-      _mapController.complete(controller);
+    googleMapController = controller; // Always update with the latest controller
+    // Only start listening for location if we haven't already.
+    if (positionStream == null) {
       _getLocation();
     }
   }
@@ -100,7 +148,7 @@ class MapCameraController extends GetxController with StateMixin {
       distanceFilter: 0, //notify all movements, otherwise, location won't pickup on second call.
     );
 
-    StreamSubscription<Position> positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position? position) async {
+    positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position? position) async {
       if (position != null) {
         errorMessage.value = "";
         latLong.value = LatLng(position.latitude, position.longitude);
@@ -109,8 +157,7 @@ class MapCameraController extends GetxController with StateMixin {
         markers.add(Marker(markerId: _markerId, position: latLong.value));
 
         final camPos = CameraPosition(target: latLong.value, zoom: 17);
-        final GoogleMapController controller = await _mapController.future;
-        await controller.animateCamera(CameraUpdate.newCameraPosition(camPos));
+        await googleMapController?.animateCamera(CameraUpdate.newCameraPosition(camPos));
 
         await _updatePosition(position);
       }
@@ -156,6 +203,30 @@ class MapCameraController extends GetxController with StateMixin {
     } else {
       await cameraController.setFlashMode(FlashMode.off);
       flashMode.value = FlashMode.off;
+    }
+  }
+
+  Future<void> switchCamera() async {
+    if (cameras.length < 2) return; // Do nothing if there's only one camera
+
+    // Show a loading state while switching
+    change(null, status: RxStatus.loading());
+
+    // Cycle to the next camera index
+    selectedCameraIndex.value = (selectedCameraIndex.value + 1) % cameras.length;
+
+    // Dispose the old controller to release the camera
+    await cameraController.dispose();
+
+    // Set up the new camera
+    await _setCamera();
+  }
+
+  void stopLocationStream() {
+    positionStream?.cancel();
+    positionStream = null; // Set to null to prevent further cancellation attempts
+    if (kDebugMode) {
+      print("Geolocation stream stopped by user.");
     }
   }
 }

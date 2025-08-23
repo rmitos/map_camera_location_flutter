@@ -123,6 +123,16 @@ class MapCameraLocation extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Obx(
+                        () => controller.takingPic.value
+                            ? const SizedBox.shrink()
+                            : IconButton(
+                                icon: const Icon(Icons.switch_camera_outlined, size: 32, color: Colors.white),
+                                onPressed: () async {
+                                  await controller.switchCamera();
+                                },
+                              ),
+                      ),
+                      Obx(
                         () => IconButton(
                           icon: Icon(controller.flashMode.value == FlashMode.off ? Icons.flash_off_outlined : Icons.flash_on_outlined, size: 32, color: Colors.white),
                           onPressed: () async {
@@ -178,6 +188,9 @@ class MapCameraLocation extends StatelessWidget {
       controller.errorMessage.value = "Please wait to capture date and time.";
       return;
     }
+
+    // Stop listening for location updates to freeze the current data.
+    controller.stopLocationStream();
 
     //hide the capture button
     controller.takingPic.value = true;
