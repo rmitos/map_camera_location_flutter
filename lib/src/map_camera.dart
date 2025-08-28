@@ -189,6 +189,11 @@ class MapCameraLocation extends StatelessWidget {
       return;
     }
 
+    if(controller.subLocation.value.isEmpty) {
+      controller.errorMessage.value = "Please wait to capture address.";
+      return;
+    }
+
     // Stop listening for location updates to freeze the current data.
     controller.stopLocationStream();
 
