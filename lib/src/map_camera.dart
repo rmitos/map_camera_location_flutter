@@ -216,7 +216,7 @@ class MapCameraLocation extends StatelessWidget {
           latitude: controller.latitudeServer.value,
           longitude: controller.longitudeServer.value,
           //locationName: locationName.value,
-          //subLocation: subLocation,
+          subLocation: controller.subLocation.value,
         );
         onImageCaptured!(data);
       }
